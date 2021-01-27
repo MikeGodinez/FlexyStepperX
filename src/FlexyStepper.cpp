@@ -1033,7 +1033,6 @@ void FlexyStepper::DeterminePeriodOfNextStep()
 {
   long distanceToTarget_Signed;
   long distanceToTarget_Unsigned;
-  float currentSpeed_InStepsPerSecond;
   long decelerationDistance_InSteps;
   float currentStepPeriodSquared;
   bool speedUpFlag = false;
@@ -1172,8 +1171,15 @@ void FlexyStepper::DeterminePeriodOfNextStep()
     nextStepPeriod_InUS = currentStepPeriod_InUS + acceleration_InStepsPerUSPerUS * 
       currentStepPeriodSquared * currentStepPeriod_InUS;
 
-    if (nextStepPeriod_InUS > periodOfSlowestStep_InUS)
-      nextStepPeriod_InUS = periodOfSlowestStep_InUS;
+    // nextStepPeriod_InUS maxes out at periodOfSlowestStep_InUS OR desiredPeriod_InUSPerStep, whichever is greater
+    // ie, speed bottoms out at these values
+    if (periodOfSlowestStep_InUS > desiredPeriod_InUSPerStep) {
+      if (nextStepPeriod_InUS > periodOfSlowestStep_InUS)
+        nextStepPeriod_InUS = periodOfSlowestStep_InUS;
+    } else {
+      if (nextStepPeriod_InUS > desiredPeriod_InUSPerStep)
+        nextStepPeriod_InUS = desiredPeriod_InUSPerStep;
+    }
   }
 }
 
