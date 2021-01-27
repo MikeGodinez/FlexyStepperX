@@ -652,7 +652,7 @@ void FlexyStepper::setAccelerationInStepsPerSecondPerSecond(
   periodOfSlowestStep_InUS = sqrt(2.0 / acceleration_InStepsPerUSPerUS);
   #else // assume TAYLOR_1
   // this doesn't use Taylor series, but the other formulas that use Taylor series don't work well without this
-  periodOfSlowestStep_InUS = 1000000.0 / sqrt(2.0 * acceleration_InStepsPerSecondPerSecond);
+  periodOfSlowestStep_InUS = FastInverseSquareRoot(2.0F * acceleration_InStepsPerUSPerUS);
   #endif
 
   minimumPeriodForAStoppedMotion = periodOfSlowestStep_InUS / 2.8;
@@ -1156,8 +1156,8 @@ void FlexyStepper::DeterminePeriodOfNextStep()
   if (speedUpFlag && nextStepPeriod_InUS != desiredPeriod_InUSPerStep)
   {
     #if FS_PRECISION == NO_TAYLOR
-    nextStepPeriod_InUS = currentStepPeriod_InUS
-     / sqrt(1 + 2 * acceleration_InStepsPerUSPerUS * currentStepPeriodSquared);
+    nextStepPeriod_InUS = currentStepPeriod_InUS *
+      FastInverseSquareRoot(1.0F + 2.0F * acceleration_InStepsPerUSPerUS * currentStepPeriodSquared);
     #else // assume TAYLOR_1
     //
     // StepPeriod = StepPeriod(1 - a * StepPeriod^2)
@@ -1185,11 +1185,11 @@ void FlexyStepper::DeterminePeriodOfNextStep()
     // if could slow down more, recompute nextStepPeriod_InUS, else skip
     if (nextStepPeriod_InUS != maxPeriod) {
       #if FS_PRECISION == NO_TAYLOR
-      float u = 1 - 2 * acceleration_InStepsPerUSPerUS * currentStepPeriodSquared;
+      float u = 1.0F - 2.0F * acceleration_InStepsPerUSPerUS * currentStepPeriodSquared;
       if (u > 0)
-        nextStepPeriod_InUS = currentStepPeriod_InUS / sqrt(u);
+        nextStepPeriod_InUS = currentStepPeriod_InUS * FastInverseSquareRoot(u);
       else
-        // in the event that sqrt()'s argument goes <= 0, just max out nextStepPeriod_InUS
+        // if would try to evaluate the square root of a number <= 0, just max out nextStepPeriod_InUS
         nextStepPeriod_InUS = maxPeriod;
       #else // assume TAYLOR_1
       //
@@ -1203,6 +1203,25 @@ void FlexyStepper::DeterminePeriodOfNextStep()
         nextStepPeriod_InUS = maxPeriod;
     }
   }
+}
+
+
+// from https://en.wikipedia.org/wiki/Fast_inverse_square_root
+float FlexyStepper::FastInverseSquareRoot(float number)
+{
+  long i;
+  float x2, y;
+  const float threehalfs = 1.5F;
+
+  x2 = number * 0.5F;
+  y  = number;
+  i  = * ( long * ) &y;
+  i  = 0x5F375A86 - ( i >> 1 );
+  y  = * ( float * ) &i;
+  y  = y * ( threehalfs - ( x2 * y * y ) ); // 1st iteration
+  y  = y * ( threehalfs - ( x2 * y * y ) ); // 2nd iteration
+
+	return y;
 }
 
 

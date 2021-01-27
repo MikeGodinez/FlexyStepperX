@@ -102,6 +102,7 @@ class FlexyStepper
     // private functions
     //
     void DeterminePeriodOfNextStep();
+    float FastInverseSquareRoot(float number);
 
  
     //
