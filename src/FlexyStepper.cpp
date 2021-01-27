@@ -648,8 +648,13 @@ void FlexyStepper::setAccelerationInStepsPerSecondPerSecond(
   acceleration_InStepsPerSecondPerSecond = accelerationInStepsPerSecondPerSecond;
   acceleration_InStepsPerUSPerUS = acceleration_InStepsPerSecondPerSecond / 1E12;
 
-  periodOfSlowestStep_InUS = 
-      1000000.0 / sqrt(2.0 * acceleration_InStepsPerSecondPerSecond);
+  #if FS_PRECISION == NO_TAYLOR
+  periodOfSlowestStep_InUS = sqrt(2.0 / acceleration_InStepsPerUSPerUS);
+  #else // assume TAYLOR_1
+  // this doesn't use Taylor series, but the other formulas that use Taylor series don't work well without this
+  periodOfSlowestStep_InUS = 1000000.0 / sqrt(2.0 * acceleration_InStepsPerSecondPerSecond);
+  #endif
+
   minimumPeriodForAStoppedMotion = periodOfSlowestStep_InUS / 2.8;
 }
 
@@ -934,7 +939,7 @@ bool FlexyStepper::processMovement(void)
   // this delay almost nothing because there's so much code between rising & 
   // falling edges
   //
-  delayMicroseconds(2);       
+  delayMicroseconds(EXTRA_PULSE_WIDTH);
   
   
   //
@@ -1149,11 +1154,16 @@ void FlexyStepper::DeterminePeriodOfNextStep()
   //
   if (speedUpFlag)
   {
+    #if FS_PRECISION == NO_TAYLOR
+    nextStepPeriod_InUS = currentStepPeriod_InUS
+     / sqrt(1 + 2 * acceleration_InStepsPerUSPerUS * currentStepPeriodSquared);
+    #else // assume TAYLOR_1
     //
     // StepPeriod = StepPeriod(1 - a * StepPeriod^2)
     //
     nextStepPeriod_InUS = currentStepPeriod_InUS - acceleration_InStepsPerUSPerUS * 
       currentStepPeriodSquared * currentStepPeriod_InUS;
+    #endif
 
     if (nextStepPeriod_InUS < desiredPeriod_InUSPerStep)
       nextStepPeriod_InUS = desiredPeriod_InUSPerStep;
@@ -1165,11 +1175,24 @@ void FlexyStepper::DeterminePeriodOfNextStep()
   //
   if (slowDownFlag)
   {
+    #if FS_PRECISION == NO_TAYLOR
+    float u = 1 - 2 * acceleration_InStepsPerUSPerUS * currentStepPeriodSquared;
+    if (u > 0)
+      nextStepPeriod_InUS = currentStepPeriod_InUS / sqrt(u);
+    else
+      // in the event that sqrt()'s argument goes <= 0, just max out nextStepPeriod_InUS
+      //  to periodOfSlowestStep_InUS OR desiredPeriod_InUSPerStep, whichever is greater.
+      if (periodOfSlowestStep_InUS > desiredPeriod_InUSPerStep)
+        nextStepPeriod_InUS = periodOfSlowestStep_InUS;
+      else
+        nextStepPeriod_InUS = desiredPeriod_InUSPerStep;
+    #else // assume TAYLOR_1
     //
     // StepPeriod = StepPeriod(1 + a * StepPeriod^2)
     //
     nextStepPeriod_InUS = currentStepPeriod_InUS + acceleration_InStepsPerUSPerUS * 
       currentStepPeriodSquared * currentStepPeriod_InUS;
+    #endif
 
     // nextStepPeriod_InUS maxes out at periodOfSlowestStep_InUS OR desiredPeriod_InUSPerStep, whichever is greater
     // ie, speed bottoms out at these values

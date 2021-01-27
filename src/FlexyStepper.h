@@ -37,6 +37,13 @@
 #include <Arduino.h>
 #include <stdlib.h>
 
+#define NO_TAYLOR 0 // do not use Taylor series
+#define TAYLOR 1 // use 1st Taylor polynomial to approximate
+
+#define FS_PRECISION TAYLOR_1 // change this to select whether or not to use Taylor series
+
+#define EXTRA_PULSE_WIDTH 10 // microseconds
+
 
 //
 // the FlexyStepper class
