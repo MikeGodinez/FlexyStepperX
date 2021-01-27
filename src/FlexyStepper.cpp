@@ -1152,7 +1152,8 @@ void FlexyStepper::DeterminePeriodOfNextStep()
   //
   // check if accelerating
   //
-  if (speedUpFlag)
+  // if could speed up more, recompute nextStepPeriod_InUS, else skip
+  if (speedUpFlag && nextStepPeriod_InUS != desiredPeriod_InUSPerStep)
   {
     #if FS_PRECISION == NO_TAYLOR
     nextStepPeriod_InUS = currentStepPeriod_InUS
@@ -1175,33 +1176,31 @@ void FlexyStepper::DeterminePeriodOfNextStep()
   //
   if (slowDownFlag)
   {
-    #if FS_PRECISION == NO_TAYLOR
-    float u = 1 - 2 * acceleration_InStepsPerUSPerUS * currentStepPeriodSquared;
-    if (u > 0)
-      nextStepPeriod_InUS = currentStepPeriod_InUS / sqrt(u);
-    else
-      // in the event that sqrt()'s argument goes <= 0, just max out nextStepPeriod_InUS
-      //  to periodOfSlowestStep_InUS OR desiredPeriod_InUSPerStep, whichever is greater.
-      if (periodOfSlowestStep_InUS > desiredPeriod_InUSPerStep)
-        nextStepPeriod_InUS = periodOfSlowestStep_InUS;
-      else
-        nextStepPeriod_InUS = desiredPeriod_InUSPerStep;
-    #else // assume TAYLOR_1
-    //
-    // StepPeriod = StepPeriod(1 + a * StepPeriod^2)
-    //
-    nextStepPeriod_InUS = currentStepPeriod_InUS + acceleration_InStepsPerUSPerUS * 
-      currentStepPeriodSquared * currentStepPeriod_InUS;
-    #endif
-
     // nextStepPeriod_InUS maxes out at periodOfSlowestStep_InUS OR desiredPeriod_InUSPerStep, whichever is greater
     // ie, speed bottoms out at these values
-    if (periodOfSlowestStep_InUS > desiredPeriod_InUSPerStep) {
-      if (nextStepPeriod_InUS > periodOfSlowestStep_InUS)
-        nextStepPeriod_InUS = periodOfSlowestStep_InUS;
-    } else {
-      if (nextStepPeriod_InUS > desiredPeriod_InUSPerStep)
-        nextStepPeriod_InUS = desiredPeriod_InUSPerStep;
+    float maxPeriod = periodOfSlowestStep_InUS > desiredPeriod_InUSPerStep
+      ? periodOfSlowestStep_InUS
+      : desiredPeriod_InUSPerStep;
+
+    // if could slow down more, recompute nextStepPeriod_InUS, else skip
+    if (nextStepPeriod_InUS != maxPeriod) {
+      #if FS_PRECISION == NO_TAYLOR
+      float u = 1 - 2 * acceleration_InStepsPerUSPerUS * currentStepPeriodSquared;
+      if (u > 0)
+        nextStepPeriod_InUS = currentStepPeriod_InUS / sqrt(u);
+      else
+        // in the event that sqrt()'s argument goes <= 0, just max out nextStepPeriod_InUS
+        nextStepPeriod_InUS = maxPeriod;
+      #else // assume TAYLOR_1
+      //
+      // StepPeriod = StepPeriod(1 + a * StepPeriod^2)
+      //
+      nextStepPeriod_InUS = currentStepPeriod_InUS + acceleration_InStepsPerUSPerUS *
+        currentStepPeriodSquared * currentStepPeriod_InUS;
+      #endif
+
+      if (nextStepPeriod_InUS > maxPeriod)
+        nextStepPeriod_InUS = maxPeriod;
     }
   }
 }
