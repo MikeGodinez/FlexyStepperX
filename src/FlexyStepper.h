@@ -38,7 +38,7 @@
 #include <stdlib.h>
 
 #define NO_TAYLOR 0 // do not use Taylor series
-#define TAYLOR 1 // use 1st Taylor polynomial to approximate
+#define TAYLOR_1 1 // use 1st Taylor polynomial to approximate
 
 #define FS_PRECISION TAYLOR_1 // change this to select whether or not to use Taylor series
 
