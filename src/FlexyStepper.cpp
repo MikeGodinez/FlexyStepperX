@@ -645,6 +645,10 @@ void FlexyStepper::setSpeedInStepsPerSecond(float speedInStepsPerSecond)
 void FlexyStepper::setAccelerationInStepsPerSecondPerSecond(
                      float accelerationInStepsPerSecondPerSecond)
 {
+  // if acceleration is unchanged, return early
+  if (acceleration_InStepsPerSecondPerSecond == accelerationInStepsPerSecondPerSecond)
+    return;
+
   acceleration_InStepsPerSecondPerSecond = accelerationInStepsPerSecondPerSecond;
   acceleration_InStepsPerUSPerUS = acceleration_InStepsPerSecondPerSecond / 1E12;
 
