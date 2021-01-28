@@ -881,6 +881,7 @@ bool FlexyStepper::processMovement(void)
   unsigned long currentTime_InUS;
   unsigned long periodSinceLastStep_InUS;
   long distanceToTarget_Signed;
+  unsigned long nextStepPeriod_InUS_unsignedLong;
 
 
   //
@@ -930,7 +931,8 @@ bool FlexyStepper::processMovement(void)
   //
   // if it is not time for the next step, return
   //
-  if (periodSinceLastStep_InUS < (unsigned long) nextStepPeriod_InUS)
+  nextStepPeriod_InUS_unsignedLong = (unsigned long) nextStepPeriod_InUS;
+  if (periodSinceLastStep_InUS < nextStepPeriod_InUS_unsignedLong)
     return(false);
   
 
@@ -952,13 +954,10 @@ bool FlexyStepper::processMovement(void)
   currentPosition_InSteps += directionOfMotion;
   currentStepPeriod_InUS = nextStepPeriod_InUS;
 
+  // remember the time that this step was scheduled to occur at
+  //  Should be okay if lastStepTime_InUS overflows.
+  lastStepTime_InUS += nextStepPeriod_InUS_unsignedLong;
 
-  //
-  // remember the time that this step occured
-  //
-  lastStepTime_InUS = currentTime_InUS;
- 
- 
   //
   // figure out how long before the next step
   //
