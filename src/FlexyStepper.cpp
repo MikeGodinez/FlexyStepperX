@@ -898,7 +898,9 @@ bool FlexyStepper::processMovement(void)
     {
       directionOfMotion = 1;
       digitalWrite(directionPin, POSITIVE_DIRECTION);
-      nextStepPeriod_InUS = periodOfSlowestStep_InUS;
+      nextStepPeriod_InUS = periodOfSlowestStep_InUS > desiredPeriod_InUSPerStep
+        ? periodOfSlowestStep_InUS
+        : desiredPeriod_InUSPerStep;
       lastStepTime_InUS = micros(); 
       return(false);
     }
@@ -910,7 +912,9 @@ bool FlexyStepper::processMovement(void)
     {
       directionOfMotion = -1;
       digitalWrite(directionPin, NEGATIVE_DIRECTION);
-      nextStepPeriod_InUS = periodOfSlowestStep_InUS;
+      nextStepPeriod_InUS = periodOfSlowestStep_InUS > desiredPeriod_InUSPerStep
+        ? periodOfSlowestStep_InUS
+        : desiredPeriod_InUSPerStep;
       lastStepTime_InUS = micros(); 
       return(false);
     }
