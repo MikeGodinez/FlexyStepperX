@@ -846,6 +846,14 @@ void FlexyStepper::setTargetPositionInSteps(long absolutePositionToMoveToInSteps
 
 
 
+long FlexyStepper::getTargetPositionInSteps()
+{
+  return targetPosition_InSteps;
+}
+
+
+
+
 //
 // setup a "Stop" to begin the process of decelerating from the current velocity  
 // to zero, decelerating requires calls to processMove() until the move is complete
