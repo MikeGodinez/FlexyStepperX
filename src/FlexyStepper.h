@@ -55,7 +55,7 @@ class FlexyStepper
     // public functions
     //
     FlexyStepper();
-    void connectToPins(byte stepPinNumber, byte directionPinNumber);
+    void connectToPins(byte stepPinNumber, byte directionPinNumber, bool flipDirectionSwitch = false);
 
     void setStepsPerMillimeter(float motorStepPerMillimeter);
     float getCurrentPositionInMillimeters();
@@ -111,6 +111,7 @@ class FlexyStepper
     //
     byte stepPin;
     byte directionPin;
+		bool flipDirection;
     float stepsPerMillimeter;
     float stepsPerRevolution;
     int directionOfMotion;

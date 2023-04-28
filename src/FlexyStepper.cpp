@@ -232,17 +232,18 @@ FlexyStepper::FlexyStepper()
 // connect the stepper object to the IO pins
 //  Enter:  stepPinNumber = IO pin number for the Step
 //          directionPinNumber = IO pin number for the direction bit
-//          enablePinNumber = IO pin number for the enable bit (LOW is enabled)
-//            set to 0 if enable is not supported
+//          flipDirectionSwitch = true to make the stepper turn the other way
 //
-void FlexyStepper::connectToPins(byte stepPinNumber, byte directionPinNumber)
+void FlexyStepper::connectToPins(byte stepPinNumber, byte directionPinNumber, bool flipDirectionSwitch)
 {
   //
   // remember the pin numbers
   //
   stepPin = stepPinNumber;
   directionPin = directionPinNumber;
-  
+
+  flipDirection = flipDirectionSwitch
+
   //
   // configure the IO bits
   //
@@ -905,7 +906,7 @@ bool FlexyStepper::processMovement(void)
     if (distanceToTarget_Signed > 0)
     {
       directionOfMotion = 1;
-      digitalWrite(directionPin, POSITIVE_DIRECTION);
+      digitalWrite(directionPin, flipDirection ? NEGATIVE_DIRECTION : POSITIVE_DIRECTION);
       nextStepPeriod_InUS = periodOfSlowestStep_InUS > desiredPeriod_InUSPerStep
         ? periodOfSlowestStep_InUS
         : desiredPeriod_InUSPerStep;
@@ -919,7 +920,7 @@ bool FlexyStepper::processMovement(void)
     else if (distanceToTarget_Signed < 0)
     {
       directionOfMotion = -1;
-      digitalWrite(directionPin, NEGATIVE_DIRECTION);
+      digitalWrite(directionPin, flipDirection ? POSITIVE_DIRECTION : NEGATIVE_DIRECTION);
       nextStepPeriod_InUS = periodOfSlowestStep_InUS > desiredPeriod_InUSPerStep
         ? periodOfSlowestStep_InUS
         : desiredPeriod_InUSPerStep;
@@ -1120,7 +1121,7 @@ void FlexyStepper::DeterminePeriodOfNextStep()
     else
     {
       directionOfMotion = -1;
-      digitalWrite(directionPin, NEGATIVE_DIRECTION);
+      digitalWrite(directionPin, flipDirection ? POSITIVE_DIRECTION : NEGATIVE_DIRECTION);
     }
   }
 
@@ -1159,7 +1160,7 @@ void FlexyStepper::DeterminePeriodOfNextStep()
     else
     {
       directionOfMotion = 1;
-      digitalWrite(directionPin, POSITIVE_DIRECTION);
+      digitalWrite(directionPin, flipDirection ? NEGATIVE_DIRECTION : POSITIVE_DIRECTION);
     }
   }
 
